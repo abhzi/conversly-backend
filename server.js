@@ -1,46 +1,54 @@
-import express from "express";
-import cors from "cors";
-import bodyParser from "body-parser";
-import axios from "axios";
-import dotenv from "dotenv";
+// server.js
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import axios from 'axios';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
-const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
+const port = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-// Health check route
-app.get("/", (req, res) => {
-  res.send("Conversly backend is up and running!");
-});
+// Debug: Show if API key is loaded
+console.log("Loaded API key:", process.env.PERPLEXITY_API_KEY ? "✅ Yes" : "❌ No");
 
+// API Route
 app.post("/api/chat", async (req, res) => {
   try {
+    const { messages } = req.body;
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: 'The "messages" field must be a non-empty array.' });
+    }
+
     const response = await axios.post(
       "https://api.perplexity.ai/chat/completions",
       {
-        model: "mistral-7b-instruct", // You can replace with "llama-3-sonar-small-32k-online"
-        messages: req.body.messages,
+        model: "sonar-small-chat", // 👈 FIXED: Use full model name
+        messages: messages
       },
       {
         headers: {
-          Authorization: `Bearer ${PERPLEXITY_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+          Authorization: `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+          "Content-Type": "application/json"
+        }
       }
     );
 
     res.json(response.data);
-  } catch (err) {
-    console.error("Perplexity API error:", err.response?.data || err.message);
-    res.status(500).json({ error: "API call failed" });
+  } catch (error) {
+    console.error("🔥 API Error:", error.response?.data || error.message);
+
+    res.status(500).json({
+      error: error.response?.data || error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Conversly backend is running on http://localhost:${PORT}`);
+app.listen(port, () => {
+  console.log(`🚀 Conversly backend is running on http://localhost:${port}`);
 });
