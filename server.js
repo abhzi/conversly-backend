@@ -27,7 +27,7 @@ app.post("/api/chat", async (req, res) => {
     const response = await axios.post(
       "https://api.perplexity.ai/chat/completions",
       {
-        model: "sonar-small-chat", // 👈 FIXED: Use full model name
+        model: "sonar", // 👈 FIXED: Use full model name
         messages: messages
       },
       {
